@@ -28,7 +28,8 @@ imagePGM openPGM(const char *filename) {
     FILE *pgmFile;
     imagePGM img;
     char type[3];
-
+    
+    img = (imagePGM) malloc(sizeof (struct netpbm) );
     // Open file for reading
     pgmFile = fopen(filename, "rb");
     if (!pgmFile) {
@@ -55,6 +56,7 @@ imagePGM openPGM(const char *filename) {
     skipCommentsPGM(pgmFile);
     fscanf(pgmFile, "%d", &depth);
     setMaxIntensityPGM(img, depth);
+    /*
     img->matrix = (uint8_t **) malloc(sizeof (uint8_t *) * img->intRow);
     if (!img->matrix) {
         free(img->matrix);
@@ -76,8 +78,8 @@ imagePGM openPGM(const char *filename) {
         fread(img->matrix[line], sizeof (uint8_t), col, pgmFile);
         //memset(img->matrix[line], 200, col);
     }
-
-    //loadDataPGM(img, pgmFile);
+    */
+    loadDataPGM(img, pgmFile);
     fclose(pgmFile);
     return img;
 }
@@ -148,7 +150,6 @@ static void skipCommentsPGM(FILE *pgmFile) {
         fseek(pgmFile, -1, SEEK_CUR);
     }
 }
-
 static void swap(uint8_t *array, unsigned int pos1, unsigned int pos2) {
     uint8_t temp = array[pos1];
     array[pos1] = array[pos2];
@@ -279,23 +280,84 @@ imagePGM rotatePGM90(imagePGM img) {
     return newImg;
 }
 
+int move (int* coord, int value) {
+    int temp;
+    temp = *coord + value;
+    return temp;
+}
+
+int flip (int* coord) {
+    int temp;
+    temp = *coord * (-1);
+    return temp;
+}
+
+int rotateY (int coord1, int coord2, double angle) {
+    
+    return coord2*cos(angle)-coord1*sin(angle);
+}
+
+int rotateX (int coord1, int coord2, double angle) {
+    
+    return coord2*sin(angle)+coord1*cos(angle);
+}
+
+           //y = row*cos(angle_rad)-col*sin(angle_rad);
+            //x = row*sin(angle_rad)+col*cos(angle_rad);
+
 imagePGM rotatePGM(imagePGM img, int angle_deg) {
     //
     imagePGM newImg = newPGM(img->intCol, img->intRow);
     double angle_rad = (double) angle_deg / 180 * M_PI;
     printf ("%f", angle_rad);
-    unsigned int col, row, x, y;
+    unsigned int col, row;
+    int x,y;
+    int x1, y1;
     setFormatPGM(newImg, getFormatPGM(img));
     setMaxIntensityPGM(newImg, getMaxIntensityPGM(img));
 
     for (row = 0; row < img->intRow; row++) {
         for (col = 0; col < img->intCol; col++) {
-            y = row*cos(angle_rad)-col*sin(angle_rad);
-            x = row*sin(angle_rad)+col*cos(angle_rad);
-
-            if (x >= newImg->intCol)
+/*            
+            y=move(&row, 0);
+            x=move(&col,-10);
+            
+            x=move(&x,10);
+            
+            x=flip(&x);
+            y=flip(&y);
+            x = move(&x, img->intCol);
+            y = move(&y, img->intRow);
+            //y = row*cos(angle_rad)-col*sin(angle_rad);
+            //x = row*sin(angle_rad)+col*cos(angle_rad);
+*/
+            /*
+            y=move(&row, 0);          
+            x=move(&col, (-1)*(int)img->intCol/2);
+            x=flip(&x);
+            x=move(&x, img->intCol/2);
+            */
+            
+            //y=flip(&y);
+            x = move(&col, (-1)*(int)img->intCol/2);
+            y = move(&row, (-1)*(int)img->intRow/2);
+            
+            x1 = x;
+            y1 = y;
+            x = rotateX(x1, y1, angle_rad);
+            y = rotateY(x1, y1, angle_rad);
+            
+            x = move(&x, img->intCol/2);
+            y = move(&y, img->intRow/2);
+            
+            
+            
+            //y = row*cos(angle_rad)-col*sin(angle_rad);
+            //x = row*sin(angle_rad)+col*cos(angle_rad);
+            
+            if (x >= newImg->intCol || x < 0)
                 continue;
-            if (y >= newImg->intRow)
+            if (y >= newImg->intRow || y < 0)
                 continue;
             setPixelIntensityPGM(newImg, col, row, getPixelIntensityPGM(img, x, y));
         }

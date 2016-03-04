@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     char *srcFilename;
     char *dstFilename;
     int FileLoad = 0, FileLoadFilename = 0, FileSave = 0, FileSaveFilename = 0, flagInfo = 0, FileInfoOptions = 0;
-    int FileImage = 0, FileImageOptions = 0, FileImageRotate = 0, FileImageRotateOptions = 0, rotAngle = 0;
+    int FileImage = 0, FileImageOptions = 0, rotAngle = 0;
     int c;
     int index;
 
