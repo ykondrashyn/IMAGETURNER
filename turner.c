@@ -4,7 +4,9 @@
 #include <inttypes.h>
 #include "turner.h"
 #include <math.h>
+#include <unistd.h>
 
+#define DEFAULT_DIVIDER 1000
 #define DEFAULT_MAX_GRAY 255
 
 struct netpbm {
@@ -15,10 +17,25 @@ struct netpbm {
     uint8_t **matrix;
 };
 
+struct measuringline {
+    int vertical_offset;
+    int angle_deg;
+    int depth;
+};
+
 static void writeHeaderPGM(imagePGM img, FILE *pgmFile);
 static void loadDataPGM(imagePGM img, FILE *pgmFile);
 static void skipCommentsPGM(FILE *pgmFile);
 static void swap(uint8_t *array, unsigned int pos1, unsigned int pos2);
+
+/* qsort int comparison function */ 
+int int_cmp(const void *a, const void *b) { 
+    const int *ia = (const int *)a; // casting pointer types 
+    const int *ib = (const int *)b;
+    return *ia  - *ib; 
+	/* integer comparison: returns negative if b > a 
+	and positive if a > b */ 
+} 
 
 /*
  * FILE-RELATED FUNCTIONS
@@ -183,7 +200,7 @@ imagePGM newPGM(unsigned int intCol, unsigned int intRow) {
             fprintf(stderr, "Error allocation memory");
             exit(EXIT_FAILURE);
         }
-        memset(newImg->matrix[line], 0, intCol);
+        memset(newImg->matrix[line], DEFAULT_MAX_GRAY, intCol);
     }
 
     newImg->intCol = intCol;
@@ -243,7 +260,6 @@ void setPixelIntensityPGM(imagePGM img, unsigned int col, unsigned int line, uns
 }
 
 unsigned int getPixelIntensityPGM(imagePGM img, unsigned int col, unsigned int row) {
-
     return img->matrix[row][col];
 }
 
@@ -275,6 +291,66 @@ imagePGM rotatePGM90(imagePGM img) {
             setPixelIntensityPGM(newImg, col, row, getPixelIntensityPGM(img, row, col));
             
         }
+    }
+
+    return newImg;
+}
+
+imagePGM buildHistogram(imagePGM img) {
+    unsigned int color[DEFAULT_MAX_GRAY+1];
+    unsigned int col, row;
+    int i, counter, j, max, line_inttensity;
+    j = 0;
+    line_inttensity = 0;
+    counter = DEFAULT_MAX_GRAY;
+    memset(color, 0, sizeof (color));
+    max = color[0];
+    
+    for (row = 0; row < img->intRow; row++) {
+        for (col = 0; col < img->intCol; col++) {
+            color[getPixelIntensityPGM(img, col, row)]++;
+        }
+    }
+
+    for (i = 0; i < DEFAULT_MAX_GRAY+1; i++) {
+        if (color[i] > max)
+            max = color[i];
+    }
+ 
+    //qsort(color, DEFAULT_MAX_GRAY, sizeof(int), int_cmp);
+    imagePGM newImg = newPGM(DEFAULT_MAX_GRAY+10, max/DEFAULT_DIVIDER);
+    setFormatPGM(newImg, getFormatPGM(img));
+    setMaxIntensityPGM(newImg, getMaxIntensityPGM(img));
+    for (col = newImg->intCol -5 ; col > 5; col--) {
+        for (row = newImg->intRow - 1; row > newImg->intRow - color[counter]/DEFAULT_DIVIDER; row--) {
+            printf("COLOR[%d]=%d, row=%d, col=%d, max=%d\n", counter, color[counter], row, col, max);
+            setPixelIntensityPGM(newImg, col, row, NULL);
+//            usleep(10000);
+            savePGM("step.pgm", newImg);
+            
+        }
+//        usleep(10000);
+        counter--;
+    }
+
+    for (row = newImg->intRow-1; row > 0; row--) {
+        for (col = 0; col < img->intCol; col++) {
+            if(getPixelIntensityPGM(newImg, col, row) == NULL)
+                line_inttensity = line_inttensity + getPixelIntensityPGM(newImg, col, row);
+        }
+        printf("line intensity:%d\n", line_inttensity);
+        if (line_inttensity < 2) {
+            line_inttensity = 0;
+            imagePGM finalImg = newPGM(DEFAULT_MAX_GRAY+10, row);
+            setFormatPGM(finalImg, getFormatPGM(img));
+            setMaxIntensityPGM(finalImg, getMaxIntensityPGM(img));
+            for (int line = 0; line < finalImg->intRow; line++) {
+            memcpy(newImg->matrix[line], finalImg->matrix[line], sizeof (unsigned int) * finalImg->intCol);
+            }    
+            printf("Cropped!\n");
+            return finalImg;
+       }
+       line_inttensity = 0;
     }
 
     return newImg;

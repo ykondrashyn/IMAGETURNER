@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -g
 LDFLAGS=
 LIBS=-lm
 SOURCES=main.c turner.c

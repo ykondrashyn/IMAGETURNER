@@ -81,6 +81,9 @@ int main(int argc, char *argv[]) {
             printf ("depth: %d\n", getMaxIntensityPGM(srcImg));
             printf ("width: %d\n", getColsPGM(srcImg));
             printf ("height: %d\n", getRowsPGM(srcImg));
+            printf ("###: %d\n", getRowsPGM(srcImg));
+            dstImg = buildHistogram(srcImg);
+            savePGM("histogram.pgm", dstImg);
         }
     }
     
