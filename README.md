@@ -3,7 +3,7 @@ IMAGETURNER is test project aimed to develop a command line tool for image proce
 * The only supported format is currently PGM
 https://en.wikipedia.org/wiki/Netpbm_format
 ### Features
-* Rotating image on arbitrary angle
+* Rotating image on arbitrary angle via rotation matrix
 * Histogram generation
 
 ## Installation
